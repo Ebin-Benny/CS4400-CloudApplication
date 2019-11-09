@@ -8,8 +8,7 @@ const _cliProgress = require("cli-progress");
 AWS.config.update({ region: "eu-west-1" });
 
 var dynamodb = new AWS.DynamoDB({
-  region: "eu-west-1",
-  endpoint: "http://localhost:8000"
+  region: "eu-west-1"
 });
 
 var s3 = new AWS.S3({ region: "eu-west-1" });
@@ -24,10 +23,7 @@ var tableParams = {
     { AttributeName: "year", AttributeType: "N" },
     { AttributeName: "title", AttributeType: "S" }
   ],
-  ProvisionedThroughput: {
-    ReadCapacityUnits: 10,
-    WriteCapacityUnits: 10
-  }
+  BillingMode: "PAY_PER_REQUEST"
 };
 
 const bucketParams = {
@@ -48,9 +44,8 @@ app.use(logger("dev"));
  */
 router.get("/createDB", cors(), async (req, res) => {
   try {
-    await createTable();
-    populateTable();
-    return res.json({});
+    const created = await createTable();
+    return res.json({ created });
   } catch (e) {
     throw new Error(e);
   }
@@ -78,17 +73,12 @@ router.get("/queryDB", cors(), async (req, res) => {
  */
 router.get("/dropDB", cors(), async (req, res) => {
   try {
-    await deleteTable();
-    return res.json({});
+    const deleted = await deleteTable();
+    return res.json({ deleted });
   } catch (e) {
     throw new Error(e);
   }
 });
-
-app.use("/", router);
-app.disable("etag");
-
-app.listen(API_PORT, () => console.log(`LISTENING ON PORT ${API_PORT}`));
 
 /**
  * Searches the table for movies in a certain year and starts with a certain title.
@@ -113,8 +103,7 @@ const queryTable = async (year, title) => {
   };
 
   const docClient = new AWS.DynamoDB.DocumentClient({
-    region: "eu-west-1",
-    endpoint: "http://localhost:8000"
+    region: "eu-west-1"
   });
 
   const result = await new Promise(resolve => {
@@ -146,6 +135,25 @@ const checkIfTableExists = async () => {
 };
 
 /**
+ * Checks if the table is created.
+ */
+const checkIfTableCreated = async () => {
+  const created = await new Promise(resolve => {
+    dynamodb.describeTable({ TableName: "Movies" }, (err, data) => {
+      if (err) {
+        resolve(false);
+      } else {
+        if (data.Table.TableStatus === "CREATING") {
+          resolve(false);
+        }
+        resolve(true);
+      }
+    });
+  });
+  return created;
+};
+
+/**
  * Creates the table if it doesn't exists.
  */
 const createTable = async () => {
@@ -155,9 +163,10 @@ const createTable = async () => {
   const created = await new Promise(resolve => {
     dynamodb.createTable(tableParams, (err, data) => {
       if (err) {
-        throw new Error(err.message);
+        resolve(false);
       }
-      resolve(data);
+      populateTable();
+      resolve(true);
     });
   });
   return created;
@@ -168,14 +177,14 @@ const createTable = async () => {
  */
 const deleteTable = async () => {
   const tableExists = await checkIfTableExists();
-  if (!tableExists) return tableExists;
+  if (!tableExists) return !tableExists;
 
   const deleted = await new Promise(resolve => {
     dynamodb.deleteTable({ TableName: "Movies" }, (err, data) => {
       if (err) {
-        throw new Error(err.message);
+        resolve(false);
       } else {
-        resolve(data);
+        resolve(true);
       }
     });
   });
@@ -195,11 +204,6 @@ const populateTable = async () => {
     });
   });
 
-  const docClient = new AWS.DynamoDB.DocumentClient({
-    region: "eu-west-1",
-    endpoint: "http://localhost:8000"
-  });
-
   const cliProgressBar = new _cliProgress.SingleBar(
     {},
     _cliProgress.Presets.shades_classic
@@ -207,6 +211,16 @@ const populateTable = async () => {
 
   // Start command line progress bar
   cliProgressBar.start(movieData.length, 0);
+
+  let tableCreated = await checkIfTableCreated();
+  while (!tableCreated) {
+    await sleep(2000);
+    tableCreated = await checkIfTableCreated();
+  }
+
+  const docClient = new AWS.DynamoDB.DocumentClient({
+    region: "eu-west-1"
+  });
 
   let progress = 0;
   for (let movie of movieData) {
@@ -227,3 +241,16 @@ const populateTable = async () => {
     });
   }
 };
+
+/**
+ * Sleeps the thread for a specified number of milliseconds.
+ * @param {number} milliseconds
+ */
+const sleep = milliseconds => {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+};
+
+app.use("/", router);
+app.disable("etag");
+
+app.listen(API_PORT, () => console.log(`LISTENING ON PORT ${API_PORT}`));
