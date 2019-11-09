@@ -4,14 +4,21 @@
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <h1>Film Database</h1>
 <div id="app">
+    <hr>
+
     <div>
         <button v-on:click="createDB">Create Database</button>
         <button v-on:click="deleteDB">Delete Database</button>
     </div>
+
+    <hr>
     <br>
+
     <input v-model="yearInput" placeholder="Year" />
     <input v-model="titleInput" placeholder="Title" />
     <button v-on:click="query">Enter</button>
+
+    <hr>
 
     <h2>Search Parameters: {{ year }} - {{ title }}</h2>
 
@@ -28,6 +35,8 @@
                         {{ new Date(movie.info.release_date).toLocaleDateString()}}
                     </td>
                 </tr>
+            </table>
+            <table>
                 <tr>
                     <td>
                         <h3>Genre{{(movie.info.genres.length>1)?"s":""}}</h3>
