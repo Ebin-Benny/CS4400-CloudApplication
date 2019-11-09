@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<!-- development version, includes helpful console warnings -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<h1>Film Database</h1>
+<div id="app">
+    <input v-model="yearInput" placeholder="Year" />
+    <input v-model="titleInput" placeholder="Title" />
+    <button v-on:click="query">Enter</button>
+
+    <div v-if="data">
+        <h2>Search Parameters: {{ year }} - {{ title }}</h2>
+        <hr>
+        <div v-for="movie in data">
+            <table>
+                <tr>
+                    <th>
+                        <h1>{{ movie.title }}&nbsp;</h1>
+                    </th>
+                    <td>
+                        <b>{{movie.info.running_time_secs/60}}mins</b> -
+                        {{ new Date(movie.info.release_date).toLocaleDateString()}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <h3>Genre{{(movie.info.genres.length>1)?"s":""}}</h3>
+                        </th>
+                    <td>
+                        {{ movie.info.genres.join(", ")}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <h3>Director{{(movie.info.directors.length>1)?"s":""}}</h3>
+                        </th>
+                    <td>
+                        {{ movie.info.directors.join(", ")}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <h3>Actor{{(movie.info.actors.length>1)?"s":""}}</h3>
+                        </th>
+                    <td>
+                        {{ movie.info.actors.join(", ")}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <h3>Rating</h3>
+                        </th>
+                    <td>
+                        {{ movie.info.rating}} <b>#({{movie.info.rank}})</b>
+                    </td>
+                </tr>
+            </table>
+            <hr>
+        </div>
+    </div>
+</div>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            data: undefined,
+            year: undefined,
+            title: undefined,
+            yearInput: "",
+            titleInput: ""
+        },
+        methods: {
+            query: function () {
+                this.data = [];
+                this.year = this.yearInput;
+                this.title = this.titleInput;
+
+                if (!this.year || !this.title) {
+                    alert("Enter the year and title you would like to query for.");
+                    return;
+                }
+
+                var myHeaders = new Headers();
+                myHeaders.append(
+                    "Access-Control-Allow-Origin",
+                    "http://localhost:3000"
+                );
+
+                var myInit = {
+                    method: "GET",
+                    headers: myHeaders,
+                    cache: "default",
+                    mode: "cors"
+                };
+
+                var queryUrl =
+                    "http://localhost:3000/queryDB?year=" +
+                    this.year +
+                    "&title=" +
+                    this.title;
+
+                var queryRequest = new Request(queryUrl, myInit);
+
+                fetch(queryRequest)
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        this.data = data;
+                    });
+            }
+        }
+    });
+</script>
+
+</html>

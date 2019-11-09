@@ -59,7 +59,7 @@ router.get("/createDB", cors(), async (req, res) => {
 /**
  * Queries the table
  */
-router.get("/queryMovie", cors(), async (req, res) => {
+router.get("/queryDB", cors(), async (req, res) => {
   try {
     const year = req.query.year;
     const title = req.query.title;
