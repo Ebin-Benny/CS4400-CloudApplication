@@ -4,6 +4,7 @@ const logger = require("morgan");
 const AWS = require("aws-sdk");
 const _cliProgress = require("cli-progress");
 
+/// AWS config
 AWS.config.update({ region: "eu-west-1" });
 
 var dynamodb = new AWS.DynamoDB({
@@ -34,6 +35,7 @@ const bucketParams = {
   Key: "moviedata.json"
 };
 
+/// Express config
 const API_PORT = 3000;
 const app = express();
 const router = express.Router();
@@ -94,6 +96,9 @@ app.listen(API_PORT, () => console.log(`LISTENING ON PORT ${API_PORT}`));
  * @param {string} title - The start of the title to search for.
  */
 const queryTable = async (year, title) => {
+  const tableExists = await checkIfTableExists();
+  if (!tableExists) return tableExists;
+
   var queryParams = {
     TableName: "Movies",
     ProjectionExpression: "#yr, title, info",
@@ -200,6 +205,7 @@ const populateTable = async () => {
     _cliProgress.Presets.shades_classic
   );
 
+  // Start command line progress bar
   cliProgressBar.start(movieData.length, 0);
 
   let progress = 0;
