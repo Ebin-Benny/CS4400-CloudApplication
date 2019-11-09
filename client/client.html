@@ -4,12 +4,18 @@
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <h1>Film Database</h1>
 <div id="app">
+    <div>
+        <button v-on:click="createDB">Create Database</button>
+        <button v-on:click="deleteDB">Delete Database</button>
+    </div>
+    <br>
     <input v-model="yearInput" placeholder="Year" />
     <input v-model="titleInput" placeholder="Title" />
     <button v-on:click="query">Enter</button>
 
+    <h2>Search Parameters: {{ year }} - {{ title }}</h2>
+
     <div v-if="data">
-        <h2>Search Parameters: {{ year }} - {{ title }}</h2>
         <hr>
         <div v-for="movie in data">
             <table>
@@ -107,6 +113,62 @@
                     })
                     .then(data => {
                         this.data = data;
+                    });
+            },
+            createDB: function () {
+                var myHeaders = new Headers();
+                myHeaders.append(
+                    "Access-Control-Allow-Origin",
+                    "http://localhost:3000"
+                );
+
+                var myInit = {
+                    method: "GET",
+                    headers: myHeaders,
+                    cache: "default",
+                    mode: "cors"
+                };
+
+                var queryRequest = new Request("http://localhost:3000/createDB", myInit);
+
+                fetch(queryRequest)
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.created) {
+                            alert("Database created.");
+                        } else {
+                            alert("Database not created.");
+                        }
+                    });
+            },
+            deleteDB: function () {
+                var myHeaders = new Headers();
+                myHeaders.append(
+                    "Access-Control-Allow-Origin",
+                    "http://localhost:3000"
+                );
+
+                var myInit = {
+                    method: "GET",
+                    headers: myHeaders,
+                    cache: "default",
+                    mode: "cors"
+                };
+
+                var queryRequest = new Request("http://localhost:3000/dropDB", myInit);
+
+                fetch(queryRequest)
+                    .then(response => {
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.deleted) {
+                            alert("Database deleted.");
+                        } else {
+                            alert("Database not deleted.");
+                        }
                     });
             }
         }

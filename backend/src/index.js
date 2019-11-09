@@ -86,8 +86,8 @@ router.get("/dropDB", cors(), async (req, res) => {
  * @param {string} title - The start of the title to search for.
  */
 const queryTable = async (year, title) => {
-  const tableExists = await checkIfTableExists();
-  if (!tableExists) return tableExists;
+  const tableCreated = await checkIfTableCreated();
+  if (!tableCreated) return tableCreated;
 
   var queryParams = {
     TableName: "Movies",
